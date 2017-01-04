@@ -102,8 +102,8 @@ export default class Job extends events.EventEmitter {
       return updatedJob;
     })
     .catch((err) => {
-      this.debug(`err.statusCode was 409 - returning true`);
-      if (err.statusCode === 409) return true;
+      this.debug(`err.statusCode was 409 - returning FALSE`);
+      if (err.statusCode === 409) return false;
       this.debug(`_claimJob failed on job ${job._id}`, err);
       this.emit(constants.EVENT_WORKER_JOB_CLAIM_ERROR, this._formatErrorParams(err, job));
       return false;
