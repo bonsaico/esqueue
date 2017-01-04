@@ -343,6 +343,9 @@ export default class Job extends events.EventEmitter {
     .then((results) => {
       const jobs = results.hits.hits;
       this.debug(`${jobs.length} outstanding jobs returned`);
+      if (jobs.length > 0) {
+        this.debug(JSON.stringify(jobs, undefined, 2));
+      }
       return jobs;
     })
     .catch((err) => {
