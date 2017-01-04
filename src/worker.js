@@ -4,6 +4,7 @@ import moment from 'moment';
 import constants from './constants';
 import logger from './helpers/logger';
 import { WorkerTimeoutError, UnspecifiedWorkerError } from './helpers/errors';
+import debugEs from './debugEs';
 
 const puid = new Puid();
 const debug = logger('esqueue:worker');
@@ -159,30 +160,42 @@ export default class Job extends events.EventEmitter {
 
   _performJob(job) {
     this.debug(`Starting job ${job._id}`);
-
+    const that = this;
     const workerOutput = new Promise((resolve, reject) => {
       // run the worker's workerFn
       let isResolved = false;
-      Promise.resolve(this.workerFn.call(null, job._source.payload))
-      .then((res) => {
-        isResolved = true;
-        resolve(res);
+      let p;
+      if (job._source == null) {
+        console.log('NULL _SOURCE - debugging');
+        p = debugEs(this.client, this.queue.index);
+      } else {
+        p = Promise.resolve();
+      }
+      p.then(function foo() {
+        Promise.resolve(that.workerFn.call(null, job._source.payload))
+        .then((res) => {
+          isResolved = true;
+          resolve(res);
+        })
+        .catch((err) => {
+          isResolved = true;
+          reject(err);
+        });
+
+        // fail if workerFn doesn't finish before timeout
+        setTimeout(() => {
+          if (isResolved) return;
+
+          that.debug(`Timeout processing job ${job._id}`);
+          reject(new WorkerTimeoutError({
+            timeout: job._source.timeout,
+            jobId: job._id,
+          }));
+        }, job._source.timeout);
       })
       .catch((err) => {
-        isResolved = true;
-        reject(err);
+        console.log('ERROR WHILE DEBUG?', err);
       });
-
-      // fail if workerFn doesn't finish before timeout
-      setTimeout(() => {
-        if (isResolved) return;
-
-        this.debug(`Timeout processing job ${job._id}`);
-        reject(new WorkerTimeoutError({
-          timeout: job._source.timeout,
-          jobId: job._id,
-        }));
-      }, job._source.timeout);
     });
 
     return workerOutput.then((output) => {
