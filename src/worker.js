@@ -274,6 +274,7 @@ export default class Job extends events.EventEmitter {
     // claim a single job, stopping after first successful claim
     return jobs.reduce((chain, job) => {
       return chain.then((claimedJob) => {
+        this.debug(`chain.then claimedJob is....${JSON.stringify(claimedJob, undefined, 2)}`);
         // short-circuit the promise chain if a job has been claimed
         if (claimed) return claimedJob;
 
