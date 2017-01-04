@@ -166,7 +166,7 @@ export default class Job extends events.EventEmitter {
       let isResolved = false;
       let p;
       if (job._source == null) {
-        console.log('NULL _SOURCE - debugging');
+        console.log('NULL job._source - debugging', JSON.stringify(job, undefined, 2));
         p = debugEs(this.client, this.queue.index);
       } else {
         p = Promise.resolve();
